@@ -1,45 +1,28 @@
 import express from "express";
-import pkg from "mssql";
-import fs from "fs";
-const { connect } = pkg;
-import mysql from "mysql";
-const connection = mysql.createConnection({
-  host: "mysql-10a79f0b-snapsi.a.aivencloud.com",
-  user: "avnadmin",
-  password: "AVNS_jwO9NLVs3LelE3cysEI",
-  database: "defaultdb",
-   
-});
+import { db } from "./connect/mssql";
+import { createAnUser, getAllUsers } from "./user/user.service";
+
 const app = express();
+app.use(express.json());
 const tempEnv = {
   port: 3000,
 };
-// const configg: string | pkg.config = {
-//   server: "mysql-10a79f0b-snapsi.a.aivencloud.com",
-//   database: "defaultdb",
-//   user: "avnadmin",
-//   password: "AVNS_jwO9NLVs3LelE3cysEI",
-//   port: 22648, // MySQL port
-//   options: {
-//     encrypt: true, // Make sure to set this to false for MySQL
-//     enableArithAbort: true,
-//   },
-// };
+
 async function bootstrap() {
-  connection.connect();
+  if ((await db())?.connected) {
+    console.log("Database connected");
 
-  connection.query(
-    "SELECT 1 + 1 AS solution",
-    function (error, results, fields) {
-      if (error) throw error;
-      console.log("The solution is: ", results[0].solution);
-    }
-  );
+    app.post("/api/user/register", async (req, res) => {
+      const result = await createAnUser(req.body);
 
-  connection.end();
+      res.send(result);
+    });
 
-  //   let pool = await connect(configg);
-  //   console.log(pool);
+    app.get("/api/users", async (req, res) => {
+      const result = await getAllUsers();
+      res.send(result);
+    });
+  }
 }
 bootstrap();
 app.listen(tempEnv.port, () => {
